@@ -43,10 +43,10 @@ module Sailthru
       post = {}
       post[:template] = template_name
       post[:email] = email
-      post[:vars] = vars if vars.length >= 1
-      post[:options] = options if options.length >= 1
-      post[:schedule_time] = schedule_time if !schedule_time.nil?
-      post[:limit] = limit if limit.length >= 1
+      post[:vars] = vars unless vars.empty?
+      post[:options] = options unless options.empty?
+      post[:schedule_time] = schedule_time unless schedule_time.nil?
+      post[:limit] = limit unless limit.empty?
       api_post(:send, post)
     end
 
@@ -54,10 +54,10 @@ module Sailthru
       post = {}
       post[:template] = template_name
       post[:email] = emails
-      post[:vars] = vars if vars.length >= 1
-      post[:options] = options if options.length >= 1
-      post[:schedule_time] = schedule_time if !schedule_time.nil?
-      post[:evars] = evars if evars.length >= 1
+      post[:vars] = vars unless vars.empty?
+      post[:options] = options unless options.empty?
+      post[:schedule_time] = schedule_time unless schedule_time.nil?
+      post[:evars] = evars unless evars.empty?
       api_post(:send, post)
     end
 
@@ -136,30 +136,14 @@ module Sailthru
     def update_blast(blast_id, name = nil, list = nil, schedule_time = nil, from_name = nil, from_email = nil, subject = nil, content_html = nil, content_text = nil, options = {})
       data = options ? options : {}
       data[:blast_id] = blast_id
-      if name != nil
-        data[:name] = name
-      end
-      if list !=  nil
-        data[:list] = list
-      end
-      if schedule_time != nil
-        data[:schedule_time] = schedule_time
-      end
-      if from_name != nil
-        data[:from_name] = from_name
-      end
-      if from_email != nil
-        data[:from_email] = from_email
-      end
-      if subject != nil
-        data[:subject] = subject
-      end
-      if content_html != nil
-        data[:content_html] = content_html
-      end
-      if content_text != nil
-        data[:content_text] = content_text
-      end
+      data[:name] = name unless name.nil?
+      data[:list] = list unless list.nil?
+      data[:schedule_time] = schedule_time unless schedule_time.nil?
+      data[:from_name] = from_name unless from_name.nil?
+      data[:from_email] = from_email unless from_email.nil?
+      data[:subject] = subject unless subject.nil?
+      data[:content_html] = content_html unless content_html.nil?
+      data[:content_text] = content_text unless content_text.nil?
       api_post(:blast, data)
     end
 
@@ -347,14 +331,9 @@ module Sailthru
       data = options
       data[:email] = email
       data[:items] = items
+      data[:incomplete] = incomplete.to_i unless incomplete.nil?
+      data[:message_id] = message_id unless message_id.nil?
 
-      if incomplete != nil
-        data[:incomplete] = incomplete.to_i
-      end
-
-      if message_id != nil
-        data[:message_id] = message_id
-      end
       api_post(:purchase, data)
     end
 
@@ -379,12 +358,8 @@ module Sailthru
     # Retrieve information about your subscriber counts on a particular list, on a particular day.
     def stats_list(list = nil, date = nil)
       data = {}
-      if list != nil
-        data[:list] = list
-      end
-      if date != nil
-        data[:date] = date
-      end
+      data[:list] = list unless list.nil?
+      data[:date] = date unless date.nil?
       data[:stat] = 'list'
       api_get(:stats, data)
     end
@@ -400,15 +375,9 @@ module Sailthru
     # Retrieve information about a particular blast or aggregated information from all of blasts over a specified date range
     def stats_blast(blast_id = nil, start_date = nil, end_date = nil, options = {})
       data = options
-      if blast_id != nil
-        data[:blast_id] = blast_id
-      end
-      if start_date != nil
-        data[:start_date] = start_date
-      end
-      if end_date != nil
-        data[:end_date] = end_date
-      end
+      data[:blast_id] = blast_id unless blast_id.nil?
+      data[:start_date] = start_date unless start_date.nil?
+      data[:end_date] = end_date unless start_date.nil?
       data[:stat] = 'blast'
       api_get(:stats, data)
     end
@@ -424,15 +393,9 @@ module Sailthru
     # Retrieve information about a particular blast or aggregated information from all of blasts over a specified date range
     def stats_send(template = nil, start_date = nil, end_date = nil, options = {})
       data = options
-      if template != nil
-        data[:template] = template
-      end
-      if start_date != nil
-        data[:start_date] = start_date
-      end
-      if end_date != nil
-        data[:end_date] = end_date
-      end
+      data[:template] = template unless template.nil?
+      data[:start_date] = start_date unless start_date.nil?
+      data[:end_date] = end_date unless end_date.nil?
       data[:stat] = 'send'
       api_get(:stats, data)
     end
@@ -451,18 +414,13 @@ module Sailthru
       data = options
       data[:title] = title
       data[:url] = url
-      if date != nil
-        data[:date] = date
+      data[:date] = date unless date.nil?
+      if tags.class == Array
+        tags = tags.join(',')
       end
-      if tags != nil
-        if tags.class == Array
-          tags = tags.join(',')
-        end
-        data[:tags] = tags
-      end
-      if vars.length > 0
-        data[:vars] = vars
-      end
+      data[:tags] = tags unless tags.nil?
+      data[:vars] = vars unless vars.empty?
+
       api_post(:content, data)
     end
 
@@ -548,13 +506,8 @@ module Sailthru
     def process_job(job, options = {}, report_email = nil, postback_url = nil, binary_key = nil)
       data = options
       data['job'] = job
-      if !report_email.nil?
-        data['report_email'] = report_email
-      end
-
-      if !postback_url.nil?
-        data['postback_url'] = postback_url
-      end
+      data['report_email'] = report_email unless report_email.nil?
+      data['postback_url'] = postback_url unless postback_url.nil?
       api_post(:job, data, binary_key)
     end
 
@@ -637,7 +590,7 @@ module Sailthru
     def get_trigger_by_template(template, trigger_id = nil)
       data = {}
       data['template'] = template
-      if trigger_id != nil then data['trigger_id'] = trigger_id end
+      data['trigger_id'] = trigger_id unless trigger_id.nil?
       api_get(:trigger, data)
     end
 
@@ -721,7 +674,7 @@ module Sailthru
     # Perform an API request, using the shared-secret auth hash.
     #
     def api_request(action, data, request_type, binary_key = nil)
-      if !binary_key.nil?
+      unless binary_key.nil?
         binary_key_data = data[binary_key]
         data.delete(binary_key)
       end
@@ -734,7 +687,7 @@ module Sailthru
         data[:sig] = get_signature_hash(data, @secret)
       end
 
-      if !binary_key.nil?
+      unless binary_key.nil?
         data[binary_key] = binary_key_data
       end
       _result = http_request("#{@api_uri}/#{action}", data, request_type, binary_key)

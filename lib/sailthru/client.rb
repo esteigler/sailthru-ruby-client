@@ -41,23 +41,15 @@ module Sailthru
     #   Hash, response data from server
     def send_email(template_name, email, vars={}, options = {}, schedule_time = nil, limit = {})
       post = {}
-      post[:template] = template_name
-      post[:email] = email
-      post[:vars] = vars unless vars.empty?
-      post[:options] = options unless options.empty?
-      post[:schedule_time] = schedule_time unless schedule_time.nil?
-      post[:limit] = limit unless limit.empty?
+      method(__method__).parameters.each {|param| post[param[1]] = eval(param[1].to_s)}
+      post = hash_cleanup(post)
       api_post(:send, post)
     end
 
     def multi_send(template_name, emails, vars={}, options = {}, schedule_time = nil, evars = {})
       post = {}
-      post[:template] = template_name
-      post[:email] = emails
-      post[:vars] = vars unless vars.empty?
-      post[:options] = options unless options.empty?
-      post[:schedule_time] = schedule_time unless schedule_time.nil?
-      post[:evars] = evars unless evars.empty?
+      method(__method__).parameters.each {|param| post[param[1]] = eval(param[1].to_s)}
+      post = hash_cleanup(post)
       api_post(:send, post)
     end
 
@@ -91,32 +83,27 @@ module Sailthru
     # Schedule a mass mail blast
     def schedule_blast(name, list, schedule_time, from_name, from_email, subject, content_html, content_text, options = {})
       post = options ? options : {}
-      post[:name] = name
-      post[:list] = list
-      post[:schedule_time] = schedule_time
-      post[:from_name] = from_name
-      post[:from_email] = from_email
-      post[:subject] = subject
-      post[:content_html] = content_html
-      post[:content_text] = content_text
+      method(__method__).parameters.each {|param| post[param[1]] = eval(param[1].to_s)}
+      post.delete(:options)
+      post = hash_cleanup(post)
       api_post(:blast, post)
     end
 
     # Schedule a mass mail blast from template
     def schedule_blast_from_template(template, list, schedule_time, options={})
       post = options ? options : {}
-      post[:copy_template] = template
-      post[:list] = list
-      post[:schedule_time] = schedule_time
+      method(__method__).parameters.each {|param| post[param[1]] = eval(param[1].to_s)}
+      post.delete(:options)
+      post = hash_cleanup(post)
       api_post(:blast, post)
     end
 
     # Schedule a mass mail blast from previous blast
     def schedule_blast_from_blast(blast_id, schedule_time, options={})
       post = options ? options : {}
-      post[:copy_blast] = blast_id
-      #post[:name] = name
-      post[:schedule_time] = schedule_time
+      method(__method__).parameters.each {|param| post[param[1]] = eval(param[1].to_s)}
+      post.delete(:options)
+      post = hash_cleanup(post)
       api_post(:blast, post)
     end
 
@@ -135,15 +122,9 @@ module Sailthru
     # updates existing blast
     def update_blast(blast_id, name = nil, list = nil, schedule_time = nil, from_name = nil, from_email = nil, subject = nil, content_html = nil, content_text = nil, options = {})
       data = options ? options : {}
-      data[:blast_id] = blast_id
-      data[:name] = name unless name.nil?
-      data[:list] = list unless list.nil?
-      data[:schedule_time] = schedule_time unless schedule_time.nil?
-      data[:from_name] = from_name unless from_name.nil?
-      data[:from_email] = from_email unless from_email.nil?
-      data[:subject] = subject unless subject.nil?
-      data[:content_html] = content_html unless content_html.nil?
-      data[:content_text] = content_text unless content_text.nil?
+      method(__method__).parameters.each {|param| data[param[1]] = eval(param[1].to_s)}
+      data.delete(:options)
+      data = hash_cleanup(data)
       api_post(:blast, data)
     end
 
@@ -196,10 +177,9 @@ module Sailthru
     # Set replacement vars and/or list subscriptions for an email address.
     def set_email(email, vars = {}, lists = {}, templates = {}, options = {})
       data = options
-      data[:email] = email
-      data[:vars] = vars unless vars.empty?
-      data[:lists] = lists unless lists.empty?
-      data[:templates] = templates unless templates.empty?
+      method(__method__).parameters.each {|param| data[param[1]] = eval(param[1].to_s)}
+      data.delete(:options)
+      data = hash_cleanup(data)
       api_post(:email, data)
     end
 
@@ -257,24 +237,20 @@ module Sailthru
     # returns:
     #   boolean, Returns true if the incoming request is an authenticated verify post.
     def receive_verify_post(params, request)
-      if request.post?
-        [:action, :email, :send_id, :sig].each { |key| return false unless params.has_key?(key) }
+      return false unless request.post?
 
-        return false unless params[:action] == :verify
+      [:action, :email, :send_id, :sig].each { |key| return false unless params.has_key?(key) }
 
-        sig = params.delete(:sig)
-        params.delete(:controller)
-        return false unless sig == get_signature_hash(params, @secret)
+      return false unless params[:action] == :verify
 
-        _send = get_send(params[:send_id])
-        return false unless _send.has_key?('email')
+      sig = params.delete(:sig)
+      params.delete(:controller)
+      return false unless sig == get_signature_hash(params, @secret)
 
-        return false unless _send['email'] == params[:email]
+      _send = get_send(params[:send_id])
+      return false unless _send['email'] == params[:email]
 
-        return true
-      else
-        return false
-      end
+      return true
     end
 
     # params:
@@ -283,18 +259,15 @@ module Sailthru
     # returns:
     #   TrueClass or FalseClass, Returns true if the incoming request is an authenticated optout post.
     def receive_optout_post(params, request)
-      if request.post?
-        [:action, :email, :sig].each { |key| return false unless params.has_key?(key) }
+      return false unless request.post?
+      [:action, :email, :sig].each { |key| return false unless params.has_key?(key) }
 
-        return false unless params[:action] == 'optout'
+      return false unless params[:action] == 'optout'
 
-        sig = params.delete(:sig)
-        params.delete(:controller)
-        return false unless sig == get_signature_hash(params, @secret)
-        return true
-      else
-        return false
-      end
+      sig = params.delete(:sig)
+      params.delete(:controller)
+      return false unless sig == get_signature_hash(params, @secret)
+      return true
     end
 
     # params:
@@ -303,18 +276,15 @@ module Sailthru
     # returns:
     #   TrueClass or FalseClass, Returns true if the incoming request is an authenticated hardbounce post.
     def receive_hardbounce_post(params, request)
-      if request.post?
-        [:action, :email, :sig].each { |key| return false unless params.has_key?(key) }
+      return false unless request.post?
+      [:action, :email, :sig].each { |key| return false unless params.has_key?(key) }
 
-        return false unless params[:action] == 'hardbounce'
+      return false unless params[:action] == 'hardbounce'
 
-        sig = params.delete(:sig)
-        params.delete(:controller)
-        return false unless sig == get_signature_hash(params, @secret)
-        return true
-      else
-        return false
-      end
+      sig = params.delete(:sig)
+      params.delete(:controller)
+      return false unless sig == get_signature_hash(params, @secret)
+      return true
     end
 
     # params:
@@ -329,11 +299,9 @@ module Sailthru
     # Record that a user has made a purchase, or has added items to their purchase total.
     def purchase(email, items, incomplete = nil, message_id = nil, options = {})
       data = options
-      data[:email] = email
-      data[:items] = items
-      data[:incomplete] = incomplete.to_i unless incomplete.nil?
-      data[:message_id] = message_id unless message_id.nil?
-
+      method(__method__).parameters.each {|param| data[param[1]] = eval(param[1].to_s)}
+      data.delete(:options)
+      data = hash_cleanup(data)
       api_post(:purchase, data)
     end
 
@@ -358,8 +326,8 @@ module Sailthru
     # Retrieve information about your subscriber counts on a particular list, on a particular day.
     def stats_list(list = nil, date = nil)
       data = {}
-      data[:list] = list unless list.nil?
-      data[:date] = date unless date.nil?
+      method(__method__).parameters.each {|param| data[param[1]] = eval(param[1].to_s)}
+      data = hash_cleanup(data)
       data[:stat] = 'list'
       api_get(:stats, data)
     end
@@ -375,9 +343,9 @@ module Sailthru
     # Retrieve information about a particular blast or aggregated information from all of blasts over a specified date range
     def stats_blast(blast_id = nil, start_date = nil, end_date = nil, options = {})
       data = options
-      data[:blast_id] = blast_id unless blast_id.nil?
-      data[:start_date] = start_date unless start_date.nil?
-      data[:end_date] = end_date unless start_date.nil?
+      method(__method__).parameters.each {|param| data[param[1]] = eval(param[1].to_s)}
+      data.delete(:options)
+      data = hash_cleanup(data)
       data[:stat] = 'blast'
       api_get(:stats, data)
     end
@@ -393,9 +361,9 @@ module Sailthru
     # Retrieve information about a particular blast or aggregated information from all of blasts over a specified date range
     def stats_send(template = nil, start_date = nil, end_date = nil, options = {})
       data = options
-      data[:template] = template unless template.nil?
-      data[:start_date] = start_date unless start_date.nil?
-      data[:end_date] = end_date unless end_date.nil?
+      method(__method__).parameters.each {|param| data[param[1]] = eval(param[1].to_s)}
+      data.delete(:options)
+      data = hash_cleanup(data)
       data[:stat] = 'send'
       api_get(:stats, data)
     end
@@ -412,14 +380,12 @@ module Sailthru
     # http://docs.sailthru.com/api/content
     def push_content(title, url, date = nil, tags = nil, vars = {}, options = {})
       data = options
-      data[:title] = title
-      data[:url] = url
-      data[:date] = date unless date.nil?
-      if tags.class == Array
-        tags = tags.join(',')
+      method(__method__).parameters.each {|param| data[param[1]] = eval(param[1].to_s)}
+      data.delete(:options)
+      data = hash_cleanup(data)
+      if data[:tags].class == Array
+        data[:tags] = data[:tags].join(',')
       end
-      data[:tags] = tags unless tags.nil?
-      data[:vars] = vars unless vars.empty?
 
       api_post(:content, data)
     end
@@ -505,9 +471,10 @@ module Sailthru
     # interface for making request to job call
     def process_job(job, options = {}, report_email = nil, postback_url = nil, binary_key = nil)
       data = options
-      data['job'] = job
-      data['report_email'] = report_email unless report_email.nil?
-      data['postback_url'] = postback_url unless postback_url.nil?
+      method(__method__).parameters.each {|param| data[param[1]] = eval(param[1].to_s)}
+      data.delete(:options)
+      data.delete(:binary_key)
+      data = hash_cleanup(data)
       api_post(:job, data, binary_key)
     end
 
@@ -612,11 +579,7 @@ module Sailthru
     # Create or update a trigger
     def post_template_trigger(template, time, time_unit, event, zephyr)
       data = {}
-      data['template'] = template
-      data['time'] = time
-      data['time_unit'] = time_unit
-      data['event'] = event
-      data['zephyr'] = zephyr
+      method(__method__).parameters.each {|param| data[param[1]] = eval(param[1].to_s)}
       api_post(:trigger, data)
     end
 
@@ -628,10 +591,7 @@ module Sailthru
     # Create or update a trigger
     def post_event_trigger(event, time, time_unit, zephyr)
       data = {}
-      data['time'] = time
-      data['time_unit'] = time_unit
-      data['event'] = event
-      data['zephyr'] = zephyr
+      method(__method__).parameters.each {|param| data[param[1]] = eval(param[1].to_s)}
       api_post(:trigger, data)
     end
 
@@ -642,8 +602,9 @@ module Sailthru
     # Notify Sailthru of an Event
     def post_event(id, event, options = {})
       data = options
-      data['id'] = id
-      data['event'] = event
+      method(__method__).parameters.each {|param| data[param[1]] = eval(param[1].to_s)}
+      data.delete(:options)
+      data = hash_cleanup(data)
       api_post(:event, data)
     end
 

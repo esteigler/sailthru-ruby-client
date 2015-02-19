@@ -72,5 +72,13 @@ module Sailthru
       end
       return f
     end
+
+    # Remove nil and empty entries in a hash recursively
+    def hash_cleanup(hash)
+      hash.select do |k, v|
+        hash_cleanup(v) if v.kind_of?(Hash)
+        v.respond_to?(:empty?) ? !v.empty? : !v.nil?
+      end
+    end
   end
 end
